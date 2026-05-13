@@ -119,12 +119,13 @@ const Auth = {
 
   // トークンをAPIで検証してユーザー情報を取得
   async verify(token) {
-    const res = await Api.call('login', { token });
+    State.token = token; // Api.call がURLパラメータに使うので先に設定
+    const res = await Api.call('login', {}, 'GET');
     if (res.ok) {
       State.user = res.user;
-      State.token = token;
       return res.user;
     }
+    State.token = null;
     return null;
   },
 
