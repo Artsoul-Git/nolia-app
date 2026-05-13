@@ -112,13 +112,13 @@ body {
 
 /* ── ローディング ── */
 #view-loading {
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 60vh;
   gap: 16px;
 }
+#view-loading.active { display: flex; }
 .loading-logo {
   font-size: 42px;
   font-weight: 900;
@@ -422,7 +422,6 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* ── エラービュー ── */
 #view-login-error {
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -430,6 +429,7 @@ input[type="range"]::-webkit-slider-thumb {
   text-align: center;
   padding: 20px;
 }
+#view-login-error.active { display: flex; }
 #view-login-error .error-icon { font-size: 60px; margin-bottom: 16px; }
 #view-login-error h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--nolia-text); }
 #view-login-error p { font-size: 13px; color: var(--nolia-muted); line-height: 1.7; }
