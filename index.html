@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nolia — あなたのカラダのリズムと歩む</title>
+<meta name="description" content="サプリと一緒に、あなたのカラダのリズムを整えるサポートアプリ">
+<meta name="theme-color" content="#2B8A7A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ── ヘッダー ── -->
+<header class="app-header" id="app-header">
+  <div class="logo">N<span>o</span>lia</div>
+  <div class="header-right" id="header-username"></div>
+</header>
+
+<!-- ══════════════════════════════════════
+     ビュー：ローディング
+═══════════════════════════════════════ -->
+<div id="view-loading" class="view">
+  <div class="loading-logo">N<span>o</span>lia</div>
+  <div class="spinner"></div>
+  <div style="font-size:12px; color:var(--nolia-muted); margin-top:8px;">読み込み中...</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ビュー：ログインエラー
+═══════════════════════════════════════ -->
+<div id="view-login-error" class="view">
+  <div class="error-icon">🍃</div>
+  <h2>リンクが見つかりません</h2>
+  <p>
+    このリンクは無効か、有効期限が切れています。<br><br>
+    週次レポートメールに届いたリンクから<br>
+    もう一度アクセスしてください。<br><br>
+    ご不明な点はスタッフまでご連絡ください。
+  </p>
+</div>
+
+<!-- ══════════════════════════════════════
+     ビュー：初回セットアップ
+═══════════════════════════════════════ -->
+<div id="view-setup" class="view">
+  <div class="page-container">
+
+    <!-- プログレスバー -->
+    <div class="setup-progress" style="margin-top:10px;">
+      <div class="setup-step current" id="setup-step-1"></div>
+      <div class="setup-step"         id="setup-step-2"></div>
+    </div>
+
+    <!-- STEP 1: 基本情報 -->
+    <div class="setup-page">
+      <div class="setup-title">Noliaへようこそ 🌿</div>
+      <div class="setup-desc">あなたに合ったサポートのために、少し教えてください。</div>
+
+      <div class="form-group">
+        <label class="form-label">表示名（ニックネームでOK）</label>
+        <input type="text" id="setup-display-name" class="form-control" placeholder="例：さくら" maxlength="20">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">生年月日（バイオサイクル計算に使用）</label>
+        <input type="date" id="setup-birthdate" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">サプリを飲み始めた日</label>
+        <input type="date" id="setup-start-date" class="form-control">
+      </div>
+
+      <button class="btn-nolia" onclick="Setup.next()">次へ →</button>
+    </div>
+
+    <!-- STEP 2: 体重・目標 -->
+    <div class="setup-page" style="display:none;">
+      <div class="setup-title">目標を教えてください 🎯</div>
+      <div class="setup-desc">記録を続けるほど、あなたに合ったアドバイスが届きます。</div>
+
+      <div class="form-group">
+        <label class="form-label">現在の体重（kg）</label>
+        <input type="number" id="setup-initial-weight" class="form-control" placeholder="例：58.5" step="0.1" min="20" max="300">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">目標体重（kg）</label>
+        <input type="number" id="setup-goal-weight" class="form-control" placeholder="例：52.0" step="0.1" min="20" max="300">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">ダイエットの目的</label>
+        <select id="setup-purpose" class="form-control">
+          <option value="">選択してください</option>
+          <option value="健康維持">健康維持</option>
+          <option value="体型維持">体型維持</option>
+          <option value="減量">減量・ダイエット</option>
+          <option value="筋量増加">筋量増加・引き締め</option>
+        </select>
+      </div>
+
+      <button class="btn-nolia" id="setup-save-btn" onclick="Setup.save()">はじめる 🌿</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ビュー：ホーム
+═══════════════════════════════════════ -->
+<div id="view-home" class="view">
+  <div class="page-container">
+
+    <!-- 連続記録バッジ -->
+    <div id="home-streak"></div>
+
+    <!-- 今日の記録 -->
+    <div class="section-header">今日の記録</div>
+    <div id="home-today-status"></div>
+
+    <!-- バイオサイクル -->
+    <div class="section-header">カラダのリズム</div>
+    <div id="home-bio"></div>
+
+    <!-- 最新レポート -->
+    <div class="section-header">最新レポート</div>
+    <div id="home-latest-report"></div>
+
+    <!-- 体験談CTA -->
+    <div class="testimonial-cta">
+      <h3>🌟 サプリの効果を教えてください</h3>
+      <p>体験談を書いてくれた方に感謝クーポンをプレゼント！</p>
+      <button class="btn-nolia" style="background:white; color:var(--nolia-primary); max-width:240px; margin:0 auto; display:block;"
+        onclick="openTestimonialFlow()">
+        体験談を書く
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ビュー：日次記録
+═══════════════════════════════════════ -->
+<div id="view-log" class="view">
+  <div class="page-container">
+
+    <div style="text-align:center; margin: 10px 0 18px;">
+      <div style="font-size:22px; font-weight:800; color:var(--nolia-dark);">今日の記録</div>
+      <div id="log-date" style="font-size:13px; color:var(--nolia-muted);"></div>
+    </div>
+
+    <!-- 体重 -->
+    <div class="nolia-card">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">⚖️ 体重（kg）</label>
+        <input type="number" id="log-weight" class="form-control"
+          placeholder="例：57.3" step="0.1" min="20" max="300"
+          style="font-size:22px; font-weight:800; text-align:center;">
+      </div>
+    </div>
+
+    <!-- 気分 -->
+    <div class="nolia-card">
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>😞 気分</span>
+          <span>😄</span>
+        </div>
+        <div class="slider-value" id="mood-val">😐 3</div>
+        <input type="range" id="log-mood" min="1" max="5" value="3"
+          oninput="Log.updateSliderDisplay('log-mood','mood-val')">
+      </div>
+    </div>
+
+    <!-- 体調 -->
+    <div class="nolia-card">
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>🤒 体調</span>
+          <span>💪</span>
+        </div>
+        <div class="slider-value" id="cond-val">😐 3</div>
+        <input type="range" id="log-cond" min="1" max="5" value="3"
+          oninput="Log.updateSliderDisplay('log-cond','cond-val')">
+      </div>
+    </div>
+
+    <!-- サプリ服用 -->
+    <div class="nolia-card">
+      <div class="form-label" style="margin-bottom:10px;">💊 今日サプリを飲みましたか？</div>
+      <div class="toggle-btn">
+        <div id="taken-yes" class="toggle-option" onclick="Log.setTaken(true)">✅ 飲んだ</div>
+        <div id="taken-no"  class="toggle-option" onclick="Log.setTaken(false)">❌ 飲まなかった</div>
+      </div>
+    </div>
+
+    <!-- メモ -->
+    <div class="nolia-card">
+      <label class="form-label">📝 ひとことメモ（任意）</label>
+      <textarea id="log-memo" class="form-control" rows="2"
+        placeholder="気づいたこと、食事の様子など..."
+        maxlength="200" style="resize:none;"></textarea>
+    </div>
+
+    <button id="log-save-btn" class="btn-nolia" onclick="Log.save()">記録を保存 ✨</button>
+    <div style="height:20px;"></div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ビュー：週次レポート
+═══════════════════════════════════════ -->
+<div id="view-report" class="view">
+  <div class="page-container">
+
+    <div style="text-align:center; margin: 10px 0 16px;">
+      <div style="font-size:22px; font-weight:800; color:var(--nolia-dark);">週次レポート</div>
+      <div style="font-size:12px; color:var(--nolia-muted);">AIがあなたの記録を分析します</div>
+    </div>
+
+    <div id="report-list"></div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ビュー：コンテンツ
+═══════════════════════════════════════ -->
+<div id="view-content" class="view">
+  <div class="page-container">
+
+    <div style="text-align:center; margin: 10px 0 16px;">
+      <div style="font-size:22px; font-weight:800; color:var(--nolia-dark);">ヘルスガイド</div>
+      <div style="font-size:12px; color:var(--nolia-muted);">健康とカラダのリズムを整えるヒント</div>
+    </div>
+
+    <div id="content-list"></div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ビュー：マイページ
+═══════════════════════════════════════ -->
+<div id="view-mypage" class="view">
+  <div class="page-container">
+
+    <!-- プロフィール -->
+    <div class="nolia-card" style="text-align:center; background: linear-gradient(135deg, var(--nolia-primary), var(--nolia-primary-light)); color:white;">
+      <div style="font-size:48px; margin-bottom:8px;">🌿</div>
+      <div id="mypage-name" style="font-size:20px; font-weight:800;"></div>
+      <div id="mypage-since" style="font-size:12px; opacity:0.85; margin-top:4px;"></div>
+    </div>
+
+    <!-- 統計 -->
+    <div class="section-header">これまでの記録</div>
+    <div class="nolia-card" id="mypage-stats"></div>
+
+    <!-- 体重グラフ -->
+    <div class="section-header">体重の推移（直近30日）</div>
+    <div class="nolia-card">
+      <canvas id="weight-chart" height="160"></canvas>
+    </div>
+
+    <!-- ログアウト -->
+    <div style="margin-top:20px; text-align:center;">
+      <button class="btn-nolia-outline" style="max-width:200px; margin:auto;" onclick="Auth.logout()">
+        ログアウト
+      </button>
+    </div>
+    <div style="height:20px;"></div>
+
+  </div>
+</div>
+
+<!-- ── ボトムナビゲーション ── -->
+<nav class="bottom-nav" id="bottom-nav" style="display:none;">
+  <button class="nav-item" id="nav-home" onclick="Home.init()">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">ホーム</div>
+  </button>
+  <button class="nav-item" id="nav-log" onclick="Log.init()">
+    <div class="nav-icon">📝</div>
+    <div class="nav-label">記録</div>
+  </button>
+  <button class="nav-item" id="nav-report" onclick="Report.init()">
+    <div class="nav-icon">📊</div>
+    <div class="nav-label">レポート</div>
+  </button>
+  <button class="nav-item" id="nav-content" onclick="Content.init()">
+    <div class="nav-icon">🌿</div>
+    <div class="nav-label">ガイド</div>
+  </button>
+  <button class="nav-item" id="nav-mypage" onclick="MyPage.init()">
+    <div class="nav-icon">👤</div>
+    <div class="nav-label">マイページ</div>
+  </button>
+</nav>
+
+<!-- ── トースト通知コンテナ ── -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- ── Scripts ── -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/biorhythm.js"></script>
+<script src="js/app.js"></script>
+<script>
+  // 体験談フロー（LINEに誘導）
+  function openTestimonialFlow() {
+    // LINE公式アカウントの友達追加URLをここに設定
+    const lineUrl = 'https://lin.ee/pJNmWlN';
+    window.open(lineUrl, '_blank');
+  }
+</script>
+
+</body>
+</html>

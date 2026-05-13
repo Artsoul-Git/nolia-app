@@ -1,0 +1,470 @@
+/* =============================================
+   Nolia — カスタムスタイル
+   ============================================= */
+
+:root {
+  --nolia-primary:   #2B8A7A;   /* メインカラー（森のティール）*/
+  --nolia-primary-light: #38B2AC;
+  --nolia-accent:    #F6AD55;   /* アクセント（アンバー）*/
+  --nolia-bg:        #F0FFF9;   /* 背景（ミント）*/
+  --nolia-dark:      #1A3C34;
+  --nolia-text:      #2D3748;
+  --nolia-muted:     #718096;
+  --nolia-border:    #E2E8F0;
+  --nolia-white:     #FFFFFF;
+  --nav-height:      60px;
+  --header-height:   56px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--nolia-bg);
+  color: var(--nolia-text);
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  padding-bottom: var(--nav-height);
+}
+
+/* ── ヘッダー ── */
+.app-header {
+  background: var(--nolia-primary);
+  color: white;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.app-header .logo {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  flex: 1;
+}
+.app-header .logo span { color: var(--nolia-accent); }
+.app-header .header-right { font-size: 12px; opacity: 0.8; }
+
+/* ── ビュー管理 ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── ページコンテナ ── */
+.page-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* ── カード ── */
+.nolia-card {
+  background: var(--nolia-white);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nolia-primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── ボトムナビゲーション ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  background: var(--nolia-white);
+  border-top: 1px solid var(--nolia-border);
+  display: flex;
+  z-index: 200;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  color: var(--nolia-muted);
+  border: none;
+  background: none;
+  font-family: inherit;
+  transition: color 0.2s;
+}
+.nav-item.active { color: var(--nolia-primary); }
+.nav-item .nav-icon { font-size: 20px; }
+.nav-item .nav-label { font-size: 10px; font-weight: 600; }
+
+/* ── ローディング ── */
+#view-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+}
+.loading-logo {
+  font-size: 42px;
+  font-weight: 900;
+  color: var(--nolia-primary);
+  letter-spacing: 4px;
+}
+.loading-logo span { color: var(--nolia-accent); }
+
+/* ── プライマリボタン ── */
+.btn-nolia {
+  background: var(--nolia-primary);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn-nolia:hover  { background: var(--nolia-primary-light); }
+.btn-nolia:active { transform: scale(0.98); }
+.btn-nolia-outline {
+  background: transparent;
+  color: var(--nolia-primary);
+  border: 2px solid var(--nolia-primary);
+  border-radius: 30px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+}
+.btn-nolia-outline:hover { background: var(--nolia-bg); }
+.btn-accent {
+  background: var(--nolia-accent);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+  transition: opacity 0.2s;
+}
+.btn-accent:hover { opacity: 0.88; }
+
+/* ── フォーム ── */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--nolia-muted);
+  margin-bottom: 6px;
+}
+.form-control {
+  width: 100%;
+  border: 2px solid var(--nolia-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--nolia-text);
+  background: var(--nolia-white);
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+.form-control:focus {
+  outline: none;
+  border-color: var(--nolia-primary);
+}
+
+/* ── スライダー（気分・体調）── */
+.slider-group { margin-bottom: 16px; }
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--nolia-muted);
+  margin-bottom: 4px;
+}
+.slider-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--nolia-primary);
+  text-align: center;
+  margin-bottom: 4px;
+}
+input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--nolia-border);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--nolia-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* ── トグルボタン（服用確認）── */
+.toggle-btn {
+  display: flex;
+  gap: 10px;
+}
+.toggle-option {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  border-radius: 10px;
+  border: 2px solid var(--nolia-border);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nolia-muted);
+  transition: all 0.2s;
+}
+.toggle-option.selected-yes {
+  border-color: var(--nolia-primary);
+  background: var(--nolia-bg);
+  color: var(--nolia-primary);
+}
+.toggle-option.selected-no {
+  border-color: #FC8181;
+  background: #FFF5F5;
+  color: #C53030;
+}
+
+/* ── ストリーク・バッジ ── */
+.streak-badge {
+  background: linear-gradient(135deg, var(--nolia-primary), var(--nolia-primary-light));
+  color: white;
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.streak-num {
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1;
+}
+.streak-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+/* ── バイオサイクルカード ── */
+.bio-overall {
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.bio-overall-icon { font-size: 32px; }
+.bio-overall-phase {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 4px 0;
+}
+.bio-overall-msg { font-size: 12px; color: var(--nolia-muted); }
+.bio-bars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.bio-bar-item { text-align: center; }
+.bio-bar-label { font-size: 10px; color: var(--nolia-muted); margin-bottom: 4px; }
+.bio-bar-track {
+  height: 8px;
+  background: var(--nolia-border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+.bio-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--nolia-primary);
+  transition: width 0.6s ease;
+}
+.bio-bar-score { font-size: 11px; font-weight: 700; color: var(--nolia-primary); }
+
+/* ── コンテンツカード ── */
+.content-card {
+  background: var(--nolia-white);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.content-card:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+.content-card-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.content-card-body { flex: 1; }
+.content-card-cat {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--nolia-primary);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.content-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nolia-text);
+  margin-bottom: 4px;
+}
+.content-card-excerpt { font-size: 11px; color: var(--nolia-muted); line-height: 1.5; }
+
+/* ── セクションヘッダー ── */
+.section-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--nolia-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 16px 0 8px;
+}
+
+/* ── 体験談ボタン ── */
+.testimonial-cta {
+  background: linear-gradient(135deg, var(--nolia-accent), #ED8936);
+  color: white;
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  margin: 14px 0;
+}
+.testimonial-cta h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.testimonial-cta p { font-size: 12px; opacity: 0.9; margin-bottom: 12px; }
+
+/* ── レポートカード ── */
+.report-card {
+  background: var(--nolia-white);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.report-date { font-size: 11px; color: var(--nolia-muted); margin-bottom: 8px; }
+.report-body { font-size: 13px; line-height: 1.9; color: var(--nolia-text); }
+.report-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.report-stat {
+  background: var(--nolia-bg);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+.report-stat-val { font-size: 20px; font-weight: 800; color: var(--nolia-primary); }
+.report-stat-label { font-size: 10px; color: var(--nolia-muted); }
+
+/* ── トースト通知 ── */
+.toast-container {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast {
+  background: var(--nolia-dark);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+  white-space: nowrap;
+}
+.toast.success { background: var(--nolia-primary); }
+.toast.error   { background: #E53E3E; }
+@keyframes toastIn  { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ── ローディングスピナー ── */
+.spinner {
+  width: 40px; height: 40px;
+  border: 4px solid var(--nolia-border);
+  border-top-color: var(--nolia-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── エラービュー ── */
+#view-login-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 20px;
+}
+#view-login-error .error-icon { font-size: 60px; margin-bottom: 16px; }
+#view-login-error h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--nolia-text); }
+#view-login-error p { font-size: 13px; color: var(--nolia-muted); line-height: 1.7; }
+
+/* ── セットアップ ── */
+.setup-progress {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.setup-step {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--nolia-border);
+}
+.setup-step.done { background: var(--nolia-primary); }
+.setup-step.current { background: var(--nolia-accent); }
+.setup-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--nolia-dark);
+  margin-bottom: 6px;
+}
+.setup-desc {
+  font-size: 13px;
+  color: var(--nolia-muted);
+  margin-bottom: 20px;
+  line-height: 1.7;
+}
+
+/* ── レスポンシブ（デスクトップはカード表示）── */
+@media (min-width: 520px) {
+  body { background: #E6EFED; }
+  .app-header { max-width: 480px; left: 50%; transform: translateX(-50%); border-radius: 0 0 0 0; }
+  .bottom-nav { max-width: 480px; left: 50%; transform: translateX(-50%); border-radius: 0; }
+  #view-loading { margin: 0 auto; max-width: 480px; }
+}

@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nolia 管理者パネル</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --pri:    #2B8A7A;
+      --pri-lt: #38B2AC;
+      --acc:    #F6AD55;
+      --dark:   #1A3C34;
+      --bg:     #F0FFF9;
+      --text:   #2D3748;
+      --muted:  #718096;
+      --border: #E2E8F0;
+      --sw:     220px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f1f5f9;
+      color: var(--text);
+      font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── ログイン ── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+    }
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 24px rgba(43,138,122,0.12);
+    }
+    .login-logo {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--pri);
+      letter-spacing: 4px;
+    }
+    .login-logo em { color: var(--acc); font-style: normal; }
+    .login-sub { font-size: 12px; color: var(--muted); margin: 4px 0 28px; letter-spacing: 1px; }
+
+    /* ── レイアウト ── */
+    #admin-app { display: flex; min-height: 100vh; }
+
+    /* ── サイドバー ── */
+    #sidebar {
+      width: var(--sw);
+      background: var(--dark);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      z-index: 100;
+      overflow-y: auto;
+    }
+    .sb-logo {
+      padding: 22px 20px 16px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sb-logo em { color: var(--acc); font-style: normal; }
+    .sb-logo small {
+      display: block;
+      font-size: 10px;
+      font-weight: 400;
+      opacity: 0.5;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+    .sb-nav { list-style: none; padding: 14px 0; flex: 1; }
+    .sb-nav li a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .sb-nav li a:hover { background: rgba(255,255,255,0.06); color: white; }
+    .sb-nav li a.active { background: rgba(43,138,122,0.35); color: white; border-left-color: var(--acc); }
+    .sb-nav li a i { font-size: 17px; width: 22px; }
+    .sb-footer {
+      padding: 14px 20px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .sb-footer a {
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .sb-footer a:hover { color: rgba(255,255,255,0.7); }
+
+    /* ── メインエリア ── */
+    #main-content { margin-left: var(--sw); flex: 1; display: flex; flex-direction: column; }
+    .top-bar {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .top-bar h1 { font-size: 15px; font-weight: 700; }
+    .content-body { padding: 24px; flex: 1; }
+
+    /* ── タブ ── */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── 統計 ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      background: white;
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .stat-num { font-size: 34px; font-weight: 800; color: var(--pri); line-height: 1.1; }
+    .stat-label { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    /* ── カード ── */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-header h2 { font-size: 14px; font-weight: 700; }
+
+    /* ── テーブル ── */
+    .tbl-wrap { overflow-x: auto; }
+    table.atbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.atbl th {
+      background: #f8fafc;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #4a5568;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    table.atbl td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f4f4f4;
+      vertical-align: middle;
+    }
+    table.atbl tr:last-child td { border-bottom: none; }
+    table.atbl tr:hover td { background: #fafafa; }
+    .empty-row td { text-align: center; padding: 32px !important; color: var(--muted); }
+
+    /* ── バッジ ── */
+    .bdg {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .bdg-green  { background: #c6f6d5; color: #276749; }
+    .bdg-red    { background: #fed7d7; color: #9b2c2c; }
+    .bdg-yellow { background: #fefcbf; color: #744210; }
+    .bdg-gray   { background: #e2e8f0; color: #4a5568; }
+    .bdg-blue   { background: #bee3f8; color: #2b6cb0; }
+
+    /* ── ボタン ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+    .btn-primary  { background: var(--pri); color: white; }
+    .btn-danger   { background: #e53e3e; color: white; }
+    .btn-warning  { background: #dd6b20; color: white; }
+    .btn-ghost    { background: #f1f5f9; color: var(--text); }
+    .btn-sm       { padding: 4px 10px; font-size: 12px; gap: 4px; }
+    .btn-full     { width: 100%; justify-content: center; }
+
+    /* ── フォーム ── */
+    .fgrp { margin-bottom: 14px; }
+    .fgrp label { display: block; font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 4px; }
+    .fgrp label .req { color: #e53e3e; margin-left: 2px; }
+    .frow { display: grid; gap: 12px; }
+    .frow.col2 { grid-template-columns: 1fr 1fr; }
+    .fctl {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+    .fctl:focus { border-color: var(--pri); box-shadow: 0 0 0 3px rgba(43,138,122,0.1); }
+    textarea.fctl { resize: vertical; }
+
+    /* ── モーダル ── */
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-bg.open { opacity: 1; pointer-events: auto; }
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(12px);
+      transition: transform 0.2s;
+    }
+    .modal-bg.open .modal-box { transform: translateY(0); }
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-title i { color: var(--pri); }
+    .modal-foot {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── トースト ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--dark);
+      color: white;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.25s;
+      z-index: 9999;
+      pointer-events: none;
+      max-width: 320px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.err  { background: #e53e3e; }
+
+    /* ── ローダー ── */
+    .spin {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--pri);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-cell { text-align: center; padding: 32px !important; color: var(--muted); }
+
+    /* ── クイックアクション ── */
+    .quick-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    #report-result { margin-top: 10px; font-size: 13px; }
+
+    /* ── ユーザー詳細 ── */
+    .mono { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); }
+
+    /* ── レスポンシブ（iPad以下） ── */
+    @media (max-width: 768px) {
+      :root { --sw: 56px; }
+      .sb-logo small, .sb-nav li a span { display: none; }
+      .sb-logo { font-size: 14px; padding: 16px 10px; }
+      .sb-nav li a { padding: 14px; justify-content: center; }
+      .sb-footer a span { display: none; }
+      .frow.col2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============ ログイン画面 ============ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">NOLI<em>A</em></div>
+    <div class="login-sub">ADMIN PANEL</div>
+    <div class="fgrp">
+      <label>GAS Web App URL</label>
+      <input id="inp-url" class="fctl" type="url"
+        placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <div class="fgrp">
+      <label>管理者トークン（ADMIN_TOKEN）</label>
+      <input id="inp-tok" class="fctl" type="password"
+        placeholder="スクリプトプロパティで設定した値">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">
+      <i class="bi bi-box-arrow-in-right"></i> ログイン
+    </button>
+    <div id="login-err" style="color:#e53e3e; font-size:12px; margin-top:10px; display:none"></div>
+  </div>
+</div>
+
+<!-- ============ 管理アプリ ============ -->
+<div id="admin-app" style="display:none">
+
+  <!-- サイドバー -->
+  <nav id="sidebar">
+    <div class="sb-logo">NOLI<em>A</em><small>ADMIN PANEL</small></div>
+    <ul class="sb-nav">
+      <li><a id="nav-dashboard" class="active" onclick="switchTab('dashboard')">
+        <i class="bi bi-grid-1x2-fill"></i><span>ダッシュボード</span>
+      </a></li>
+      <li><a id="nav-users" onclick="switchTab('users')">
+        <i class="bi bi-people-fill"></i><span>会員管理</span>
+      </a></li>
+      <li><a id="nav-content" onclick="switchTab('content')">
+        <i class="bi bi-file-earmark-richtext"></i><span>コンテンツ</span>
+      </a></li>
+      <li><a id="nav-testimonials" onclick="switchTab('testimonials')">
+        <i class="bi bi-chat-quote-fill"></i><span>口コミ管理</span>
+      </a></li>
+    </ul>
+    <div class="sb-footer">
+      <a onclick="doLogout()">
+        <i class="bi bi-box-arrow-left"></i><span>ログアウト</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- メインコンテンツ -->
+  <div id="main-content">
+    <div class="top-bar">
+      <h1 id="page-title">ダッシュボード</h1>
+      <span id="top-badge" style="font-size:12px; color:var(--muted)"></span>
+    </div>
+    <div class="content-body">
+
+      <!-- ─── ダッシュボード ─── -->
+      <div id="tab-dashboard" class="tab-pane active">
+        <div class="stat-grid" id="stat-grid">
+          <div class="stat-box" style="text-align:center"><span class="spin"></span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2><i class="bi bi-lightning-charge-fill" style="color:var(--acc)"></i> クイックアクション</h2></div>
+          <div class="quick-actions">
+            <button class="btn btn-primary" id="btn-report" onclick="triggerReports()">
+              <i class="bi bi-send-fill"></i> 今すぐレポート生成・送信
+            </button>
+            <button class="btn btn-ghost" onclick="switchTab('users')">
+              <i class="bi bi-person-plus-fill"></i> 新規会員を登録
+            </button>
+            <button class="btn btn-ghost" onclick="refreshAll()">
+              <i class="bi bi-arrow-clockwise"></i> 画面を更新
+            </button>
+          </div>
+          <div id="report-result"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>最近の会員登録</h2></div>
+          <div id="recent-users"><span class="spin"></span></div>
+        </div>
+      </div>
+
+      <!-- ─── 会員管理 ─── -->
+      <div id="tab-users" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>会員一覧</h2>
+            <button class="btn btn-primary btn-sm" onclick="openUserModal()">
+              <i class="bi bi-person-plus"></i> 新規登録
+            </button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="atbl">
+              <thead>
+                <tr>
+                  <th>ユーザーID</th>
+                  <th>名前</th>
+                  <th>メールアドレス</th>
+                  <th>参加日</th>
+                  <th>最終記録日</th>
+                  <th>ステータス</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody">
+                <tr><td class="loading-cell" colspan="6"><span class="spin"></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── コンテンツ管理 ─── -->
+      <div id="tab-content" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>コンテンツ一覧</h2>
+            <button class="btn btn-primary btn-sm" onclick="openContentModal(null)">
+              <i class="bi bi-plus-lg"></i> 追加
+            </button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="atbl">
+              <thead>
+                <tr>
+                  <th>順</th>
+                  <th>種類</th>
+                  <th>タイトル</th>
+                  <th>概要</th>
+                  <th>公開</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="content-tbody">
+                <tr><td class="loading-cell" colspan="6"><span class="spin"></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── 口コミ管理 ─── -->
+      <div id="tab-testimonials" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>口コミ一覧</h2>
+            <span id="pending-count" style="font-size:12px; color:var(--muted)"></span>
+          </div>
+          <div class="tbl-wrap">
+            <table class="atbl">
+              <thead>
+                <tr>
+                  <th>投稿日</th>
+                  <th>表示名</th>
+                  <th>継続期間</th>
+                  <th>内容</th>
+                  <th>ステータス</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="testi-tbody">
+                <tr><td class="loading-cell" colspan="6"><span class="spin"></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ─── 会員登録モーダル ─── -->
+<div class="modal-bg" id="modal-user">
+  <div class="modal-box">
+    <div class="modal-title"><i class="bi bi-person-plus-fill"></i> 新規会員登録</div>
+    <div class="fgrp">
+      <label>お名前<span class="req">*</span></label>
+      <input id="u-name" class="fctl" placeholder="例：山田 太郎">
+    </div>
+    <div class="fgrp">
+      <label>メールアドレス<span class="req">*</span></label>
+      <input id="u-email" class="fctl" type="email" placeholder="例：taro@example.com">
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-top:4px">
+      <i class="bi bi-info-circle"></i>
+      登録すると招待メールが自動送信されます。
+    </p>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-user')">キャンセル</button>
+      <button class="btn btn-primary" onclick="createUser()">
+        <i class="bi bi-send"></i> 登録して招待メールを送る
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── コンテンツ モーダル ─── -->
+<div class="modal-bg" id="modal-content">
+  <div class="modal-box">
+    <div class="modal-title" id="c-modal-title">
+      <i class="bi bi-file-earmark-plus"></i> コンテンツ追加
+    </div>
+    <div class="frow col2">
+      <div class="fgrp">
+        <label>種類</label>
+        <select id="c-type" class="fctl">
+          <option value="tip">Tips（健康豆知識）</option>
+          <option value="blog">ブログ記事</option>
+          <option value="news">お知らせ</option>
+          <option value="campaign">キャンペーン</option>
+        </select>
+      </div>
+      <div class="fgrp">
+        <label>カテゴリ</label>
+        <input id="c-cat" class="fctl" placeholder="例：栄養・運動・睡眠">
+      </div>
+    </div>
+    <div class="fgrp">
+      <label>タイトル<span class="req">*</span></label>
+      <input id="c-title" class="fctl" placeholder="記事のタイトル">
+    </div>
+    <div class="fgrp">
+      <label>概要文（アプリ内カード表示用）</label>
+      <textarea id="c-excerpt" class="fctl" rows="3" placeholder="2〜3行で簡潔に"></textarea>
+    </div>
+    <div class="fgrp">
+      <label>リンク先URL（外部記事・ブログ等）</label>
+      <input id="c-url" class="fctl" type="url" placeholder="https://...">
+    </div>
+    <div class="frow col2">
+      <div class="fgrp">
+        <label>表示開始日（空欄＝即時）</label>
+        <input id="c-start" class="fctl" type="date">
+      </div>
+      <div class="fgrp">
+        <label>表示終了日（空欄＝無期限）</label>
+        <input id="c-end" class="fctl" type="date">
+      </div>
+    </div>
+    <div class="frow col2">
+      <div class="fgrp">
+        <label>表示順（小さいほど上）</label>
+        <input id="c-order" class="fctl" type="number" value="99" min="1">
+      </div>
+      <div class="fgrp">
+        <label>公開設定</label>
+        <select id="c-active" class="fctl">
+          <option value="true">公開中</option>
+          <option value="false">非公開</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-content')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveContent()">
+        <i class="bi bi-check-lg"></i> 保存
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── トースト ─── -->
+<div id="toast"></div>
+
+<script>
+// =============================================
+// Nolia Admin Panel v1.0
+// =============================================
+
+const A = {
+  apiBase: '',
+  token: '',
+
+  async call(action, payload, method = 'GET') {
+    const url = this.apiBase + '?action=' + encodeURIComponent(action)
+      + (method === 'GET' ? '&token=' + encodeURIComponent(this.token) : '');
+    const opts = { method };
+    if (method === 'POST') {
+      opts.headers = { 'Content-Type': 'application/json' };
+      opts.body    = JSON.stringify(Object.assign({ token: this.token }, payload || {}));
+    }
+    const r = await fetch(url, opts);
+    return r.json();
+  },
+};
+
+// ── データキャッシュ ──
+let _users    = [];
+let _content  = [];
+let _testis   = [];
+let _editContentId = null;
+
+// ────────────────────────────────────────────
+// ログイン
+// ────────────────────────────────────────────
+async function doLogin() {
+  const url   = document.getElementById('inp-url').value.trim();
+  const token = document.getElementById('inp-tok').value.trim();
+  const err   = document.getElementById('login-err');
+  err.style.display = 'none';
+
+  if (!url || !token) {
+    err.textContent = 'URLとトークンを両方入力してください';
+    err.style.display = 'block';
+    return;
+  }
+
+  A.apiBase = url;
+  A.token   = token;
+
+  try {
+    const res = await A.call('getUsers');
+    if (!res.ok) {
+      err.textContent = '認証失敗：' + (res.error || 'トークンを確認してください');
+      err.style.display = 'block';
+      return;
+    }
+    sessionStorage.setItem('n_api',   url);
+    sessionStorage.setItem('n_tok',   token);
+    showApp();
+  } catch(e) {
+    err.textContent = '接続エラー：URLを確認してください';
+    err.style.display = 'block';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('n_api');
+  sessionStorage.removeItem('n_tok');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-app').style.display   = 'none';
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-app').style.display   = 'flex';
+  refreshAll();
+}
+
+async function refreshAll() {
+  await Promise.all([loadUsers(), loadContent(), loadTestimonials()]);
+  renderDashboard();
+}
+
+// ────────────────────────────────────────────
+// タブ切り替え
+// ────────────────────────────────────────────
+const TAB_TITLES = {
+  dashboard:    'ダッシュボード',
+  users:        '会員管理',
+  content:      'コンテンツ管理',
+  testimonials: '口コミ管理',
+};
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.sb-nav li a').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  document.getElementById('page-title').textContent = TAB_TITLES[name] || name;
+}
+
+// ────────────────────────────────────────────
+// ダッシュボード
+// ────────────────────────────────────────────
+function renderDashboard() {
+  const total   = _users.length;
+  const active  = _users.filter(u => u.status === 'active').length;
+  const today   = new Date().toISOString().split('T')[0];
+  const newToday = _users.filter(u => (u.joined_at || '').startsWith(today)).length;
+  const pending  = _testis.filter(t => t.status === 'pending').length;
+
+  document.getElementById('stat-grid').innerHTML = [
+    { n: total,   l: '総会員数' },
+    { n: active,  l: 'アクティブ会員' },
+    { n: newToday,l: '本日の新規登録' },
+    { n: pending, l: '未承認の口コミ' },
+  ].map(s => `
+    <div class="stat-box">
+      <div class="stat-num">${s.n}</div>
+      <div class="stat-label">${s.l}</div>
+    </div>
+  `).join('');
+
+  const recent = _users.slice(0, 5);
+  document.getElementById('recent-users').innerHTML = recent.length === 0
+    ? '<p style="color:var(--muted); font-size:13px">まだ会員がいません</p>'
+    : `<table class="atbl">
+        <thead><tr><th>名前</th><th>メール</th><th>参加日</th><th>ステータス</th></tr></thead>
+        <tbody>${recent.map(u => `
+          <tr>
+            <td><strong>${esc(u.name)}</strong></td>
+            <td>${esc(u.email)}</td>
+            <td>${(u.joined_at || '').split('T')[0] || '—'}</td>
+            <td>${statusBadge(u.status)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+}
+
+async function triggerReports() {
+  const btn = document.getElementById('btn-report');
+  const res_el = document.getElementById('report-result');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> 生成中…';
+  res_el.innerHTML = '';
+
+  try {
+    const res = await A.call('generateReports', {}, 'POST');
+    if (res.ok) {
+      res_el.innerHTML = '<span style="color:#276749"><i class="bi bi-check-circle-fill"></i> レポート生成・送信が完了しました</span>';
+      toast('レポートを全会員に送信しました');
+    } else {
+      res_el.innerHTML = '<span style="color:#e53e3e"><i class="bi bi-x-circle-fill"></i> エラー：' + esc(res.error || '不明') + '</span>';
+    }
+  } catch(e) {
+    res_el.innerHTML = '<span style="color:#e53e3e">接続エラー</span>';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-send-fill"></i> 今すぐレポート生成・送信';
+}
+
+// ────────────────────────────────────────────
+// 会員管理
+// ────────────────────────────────────────────
+async function loadUsers() {
+  const res = await A.call('getUsers');
+  if (!res.ok) {
+    document.getElementById('users-tbody').innerHTML =
+      '<tr><td colspan="6" class="loading-cell" style="color:#e53e3e">読み込みエラー：' + esc(res.error || '') + '</td></tr>';
+    return;
+  }
+  _users = res.users || [];
+  renderUsers();
+}
+
+function renderUsers() {
+  const tbody = document.getElementById('users-tbody');
+  if (_users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">会員がいません</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _users.map(u => `
+    <tr>
+      <td class="mono">${esc(u.user_id)}</td>
+      <td>
+        <strong>${esc(u.name)}</strong>
+        ${u.display_name && u.display_name !== u.name
+          ? '<br><span style="font-size:11px;color:var(--muted)">表示名：' + esc(u.display_name) + '</span>'
+          : ''}
+      </td>
+      <td>${esc(u.email)}</td>
+      <td>${(u.joined_at || '').split('T')[0] || '—'}</td>
+      <td>${u.last_record_at
+        ? (u.last_record_at + '').split('T')[0]
+        : '<span style="color:var(--muted)">未記録</span>'}</td>
+      <td>${statusBadge(u.status)}</td>
+    </tr>
+  `).join('');
+}
+
+function openUserModal() {
+  document.getElementById('u-name').value  = '';
+  document.getElementById('u-email').value = '';
+  openModal('modal-user');
+}
+
+async function createUser() {
+  const name  = document.getElementById('u-name').value.trim();
+  const email = document.getElementById('u-email').value.trim();
+  if (!name || !email) { toast('名前とメールアドレスを入力してください', true); return; }
+
+  const res = await A.call('createUser', { email, name }, 'POST');
+  if (res.ok) {
+    toast(esc(name) + 'さんを登録し招待メールを送信しました');
+    closeModal('modal-user');
+    await loadUsers();
+    renderDashboard();
+  } else {
+    toast('エラー：' + (res.error || '登録失敗'), true);
+  }
+}
+
+// ────────────────────────────────────────────
+// コンテンツ管理
+// ────────────────────────────────────────────
+const TYPE_LABEL = { tip: 'Tips', blog: 'ブログ', news: 'お知らせ', campaign: 'キャンペーン' };
+
+async function loadContent() {
+  const res = await A.call('getContentAdmin');
+  if (!res.ok) {
+    document.getElementById('content-tbody').innerHTML =
+      '<tr><td colspan="6" class="empty-row" style="color:var(--muted)">コンテンツがありません（GASにgetContentAdminルートを追加してください）</td></tr>';
+    return;
+  }
+  _content = res.content || [];
+  renderContent();
+}
+
+function renderContent() {
+  const tbody = document.getElementById('content-tbody');
+  if (_content.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">コンテンツがありません。「追加」から登録してください。</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _content.map((c, i) => `
+    <tr>
+      <td style="text-align:center; color:var(--muted)">${c.display_order || '—'}</td>
+      <td><span style="font-size:11px; background:#edf2f7; padding:2px 7px; border-radius:4px; font-weight:600">${esc(TYPE_LABEL[c.type] || c.type)}</span></td>
+      <td>
+        <strong>${esc(c.title)}</strong>
+        ${c.category ? '<br><span style="font-size:11px;color:var(--muted)">' + esc(c.category) + '</span>' : ''}
+      </td>
+      <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted)">
+        ${esc(c.excerpt || '—')}
+      </td>
+      <td>${c.active ? '<span class="bdg bdg-green">公開中</span>' : '<span class="bdg bdg-gray">非公開</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" data-ci="${i}" onclick="openContentModal(+this.dataset.ci)">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-danger btn-sm" data-ci="${i}" onclick="deleteContent(+this.dataset.ci)" style="margin-left:4px">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openContentModal(idxOrNull) {
+  const item = (idxOrNull !== null && idxOrNull !== undefined) ? _content[idxOrNull] : null;
+  _editContentId = item ? item.content_id : null;
+  document.getElementById('c-modal-title').innerHTML = item
+    ? '<i class="bi bi-pencil"></i> コンテンツ編集'
+    : '<i class="bi bi-file-earmark-plus"></i> コンテンツ追加';
+  document.getElementById('c-type').value    = item ? (item.type || 'tip') : 'tip';
+  document.getElementById('c-cat').value     = item ? (item.category || '') : '';
+  document.getElementById('c-title').value   = item ? (item.title || '') : '';
+  document.getElementById('c-excerpt').value = item ? (item.excerpt || '') : '';
+  document.getElementById('c-url').value     = item ? (item.external_url || '') : '';
+  document.getElementById('c-start').value   = item ? (item.display_start || '') : '';
+  document.getElementById('c-end').value     = item ? (item.display_end || '') : '';
+  document.getElementById('c-order').value   = item ? (item.display_order || 99) : 99;
+  document.getElementById('c-active').value  = item ? String(!!item.active) : 'true';
+  openModal('modal-content');
+}
+
+async function saveContent() {
+  const title = document.getElementById('c-title').value.trim();
+  if (!title) { toast('タイトルを入力してください', true); return; }
+
+  const payload = {
+    type:          document.getElementById('c-type').value,
+    category:      document.getElementById('c-cat').value.trim(),
+    title,
+    excerpt:       document.getElementById('c-excerpt').value.trim(),
+    external_url:  document.getElementById('c-url').value.trim(),
+    display_start: document.getElementById('c-start').value,
+    display_end:   document.getElementById('c-end').value,
+    display_order: parseInt(document.getElementById('c-order').value) || 99,
+    active:        document.getElementById('c-active').value === 'true',
+  };
+
+  const action = _editContentId ? 'updateContent' : 'addContent';
+  if (_editContentId) payload.content_id = _editContentId;
+
+  const res = await A.call(action, payload, 'POST');
+  if (res.ok) {
+    toast(_editContentId ? 'コンテンツを更新しました' : 'コンテンツを追加しました');
+    closeModal('modal-content');
+    await loadContent();
+  } else {
+    toast('エラー：' + (res.error || '保存失敗'), true);
+  }
+}
+
+async function deleteContent(idx) {
+  const item = _content[idx];
+  if (!item) return;
+  if (!confirm('「' + item.title + '」を非公開にしますか？')) return;
+  const res = await A.call('deleteContent', { content_id: item.content_id }, 'POST');
+  if (res.ok) { toast('コンテンツを非公開にしました'); await loadContent(); }
+  else toast('エラー：' + (res.error || '失敗'), true);
+}
+
+// ────────────────────────────────────────────
+// 口コミ管理
+// ────────────────────────────────────────────
+const STATUS_LABEL = { pending: '審査待ち', approved: '承認済み', rejected: '却下' };
+
+async function loadTestimonials() {
+  const res = await A.call('getTestimonials');
+  if (!res.ok) {
+    document.getElementById('testi-tbody').innerHTML =
+      '<tr><td colspan="6" class="empty-row">口コミがありません</td></tr>';
+    return;
+  }
+  _testis = res.testimonials || [];
+  renderTestimonials();
+}
+
+function renderTestimonials() {
+  const pending = _testis.filter(t => t.status === 'pending').length;
+  document.getElementById('pending-count').textContent =
+    pending > 0 ? `未承認 ${pending}件` : '';
+
+  const tbody = document.getElementById('testi-tbody');
+  if (_testis.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">口コミがありません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _testis.map((t, i) => `
+    <tr>
+      <td style="white-space:nowrap; font-size:12px; color:var(--muted)">${(t.submitted_at || '').split('T')[0] || '—'}</td>
+      <td>${esc(t.display_name || '匿名')}</td>
+      <td>${esc(t.duration || '—')}</td>
+      <td style="max-width:240px">${esc(t.content || '')}</td>
+      <td>${testiBadge(t.status)}</td>
+      <td style="white-space:nowrap">
+        ${t.status === 'pending' ? `
+          <button class="btn btn-primary btn-sm" data-ti="${i}" data-act="approve" onclick="updateTesti(+this.dataset.ti, this.dataset.act)">
+            <i class="bi bi-check-lg"></i> 承認
+          </button>
+          <button class="btn btn-warning btn-sm" data-ti="${i}" data-act="reject" onclick="updateTesti(+this.dataset.ti, this.dataset.act)" style="margin-left:4px">
+            <i class="bi bi-x-lg"></i> 却下
+          </button>
+        ` : '<span style="color:var(--muted)">—</span>'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function updateTesti(idx, action) {
+  const t = _testis[idx];
+  if (!t) return;
+  const label = action === 'approve' ? '承認' : '却下';
+  if (!confirm('この口コミを' + label + 'しますか？')) return;
+  const res = await A.call('approveTestimonial', { testimonial_id: t.testimonial_id, action }, 'POST');
+  if (res.ok) { toast('口コミを' + label + 'しました'); await loadTestimonials(); renderDashboard(); }
+  else toast('エラー：' + (res.error || '失敗'), true);
+}
+
+// ────────────────────────────────────────────
+// ユーティリティ
+// ────────────────────────────────────────────
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function statusBadge(status) {
+  if (status === 'active') return '<span class="bdg bdg-green">アクティブ</span>';
+  return '<span class="bdg bdg-red">停止</span>';
+}
+
+function testiBadge(status) {
+  const m = { pending: 'bdg-yellow', approved: 'bdg-green', rejected: 'bdg-gray' };
+  return `<span class="bdg ${m[status] || 'bdg-gray'}">${esc(STATUS_LABEL[status] || status)}</span>`;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+let _toastT;
+function toast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => { el.className = ''; }, 3200);
+}
+
+// モーダル外クリックで閉じる
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target === bg) closeModal(bg.id); });
+});
+
+// Enterキーでログイン
+document.getElementById('inp-tok').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ── セッション復元 ──
+(function init() {
+  const api = sessionStorage.getItem('n_api');
+  const tok = sessionStorage.getItem('n_tok');
+  if (api && tok) {
+    A.apiBase = api;
+    A.token   = tok;
+    document.getElementById('inp-url').value = api;
+    document.getElementById('inp-tok').value = tok;
+    showApp();
+  }
+})();
+</script>
+</body>
+</html>
