@@ -461,6 +461,68 @@ input[type="range"]::-webkit-slider-thumb {
   line-height: 1.7;
 }
 
+/* ── 占いカード ── */
+.fortune-card {
+  background: linear-gradient(135deg, #4C1D95, #6D28D9, #7C3AED);
+  border-radius: 16px;
+  padding: 18px;
+  color: white;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 20px rgba(109,40,217,0.3);
+}
+.fortune-animal {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.fortune-emoji { font-size: 52px; line-height: 1; flex-shrink: 0; }
+.fortune-animal-name { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+.fortune-tagline { font-size: 12px; opacity: 0.85; font-style: italic; }
+.fortune-message {
+  font-size: 13px;
+  line-height: 1.85;
+  margin-bottom: 14px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 12px;
+}
+.fortune-lucky { display: flex; gap: 10px; }
+.fortune-lucky-item {
+  flex: 1;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fortune-lucky-label { opacity: 0.75; }
+.fortune-lucky-val { font-size: 13px; font-weight: 800; }
+
+/* ── AIフィードバックカード ── */
+.ai-feedback-card {
+  background: linear-gradient(135deg, #E6FFFA, #F0FFF9);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  border: 1.5px solid var(--nolia-primary-light);
+}
+.ai-feedback-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--nolia-primary);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.ai-feedback-text {
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--nolia-text);
+}
+
 /* ── レスポンシブ（デスクトップはカード表示）── */
 @media (min-width: 520px) {
   body { background: #E6EFED; }

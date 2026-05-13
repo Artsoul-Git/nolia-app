@@ -138,6 +138,143 @@ const Auth = {
   },
 };
 
+// ─── 占い ─────────────────────────────────
+const Fortune = {
+  _key(date) { return 'nolia_fortune_' + date; },
+
+  getCached(date) {
+    try {
+      const raw = localStorage.getItem(this._key(date));
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) { return null; }
+  },
+
+  saveCache(date, data) {
+    try { localStorage.setItem(this._key(date), JSON.stringify(data)); } catch (_) {}
+  },
+
+  async load() {
+    const today = Utils.today();
+    const cached = this.getCached(today);
+    if (cached) { this.render(cached); return; }
+
+    this.renderLoading();
+    const res = await Api.call('getDailyFortune', {}, 'GET');
+    if (res.ok && res.fortune) {
+      this.saveCache(today, res.fortune);
+      this.render(res.fortune);
+    } else {
+      this.renderFallback(res.error);
+    }
+  },
+
+  renderLoading() {
+    const el = document.getElementById('home-fortune');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="fortune-card" style="text-align:center; padding:24px;">
+        <div class="spinner" style="margin:0 auto 10px; border-color:rgba(255,255,255,0.3); border-top-color:white;"></div>
+        <div style="font-size:12px; opacity:0.8;">占い取得中…</div>
+      </div>`;
+  },
+
+  render(f) {
+    const el = document.getElementById('home-fortune');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="fortune-card">
+        <div class="fortune-animal">
+          <span class="fortune-emoji">${f.emoji}</span>
+          <div>
+            <div class="fortune-animal-name">${f.animal}</div>
+            <div class="fortune-tagline">「${f.tagline}」</div>
+          </div>
+        </div>
+        <div class="fortune-message">${f.message}</div>
+        <div class="fortune-lucky">
+          <div class="fortune-lucky-item">
+            <span class="fortune-lucky-label">ラッキーカラー</span>
+            <span class="fortune-lucky-val">🎨 ${f.lucky_color}</span>
+          </div>
+          <div class="fortune-lucky-item">
+            <span class="fortune-lucky-label">今日のアクション</span>
+            <span class="fortune-lucky-val">✨ ${f.lucky_action}</span>
+          </div>
+        </div>
+      </div>`;
+  },
+
+  renderFallback(error) {
+    const el = document.getElementById('home-fortune');
+    if (!el) return;
+    if (error === 'birthdate_not_set') {
+      el.innerHTML = `
+        <div class="fortune-card" style="text-align:center;">
+          <div style="font-size:36px; margin-bottom:10px;">🔮</div>
+          <div style="font-size:13px; font-weight:700; margin-bottom:6px;">生年月日を登録すると占いが見られます</div>
+          <div style="font-size:11px; opacity:0.8;">プロフィール設定で生年月日を入力してください</div>
+        </div>`;
+    } else {
+      el.innerHTML = '';
+    }
+  },
+};
+
+// ─── AIフィードバック（ホーム表示） ─────────
+const AiFeedback = {
+  _key(date) { return 'nolia_aifb_' + date; },
+
+  getCached(date) {
+    try {
+      const raw = localStorage.getItem(this._key(date));
+      return raw || null;
+    } catch (_) { return null; }
+  },
+
+  saveCache(date, text) {
+    try { localStorage.setItem(this._key(date), text); } catch (_) {}
+  },
+
+  async load(log) {
+    const el = document.getElementById('home-ai-feedback');
+    if (!el || !log) { if (el) el.innerHTML = ''; return; }
+
+    const today = Utils.today();
+    const cached = this.getCached(today);
+    if (cached) { this.render(cached); return; }
+
+    // バックグラウンドで取得（表示はスケルトンなし）
+    el.innerHTML = `
+      <div class="ai-feedback-card">
+        <div class="ai-feedback-header">🌿 Nolia AI より</div>
+        <div style="text-align:center; padding:6px 0; color:var(--nolia-muted); font-size:12px;">
+          <div class="spinner" style="width:20px; height:20px; border-width:3px; margin:0 auto 6px;"></div>
+          フィードバック作成中…
+        </div>
+      </div>`;
+
+    const res = await Api.call('getAiFeedback', {
+      weight: log.weight, mood: log.mood, cond: log.cond, taken: log.taken,
+    });
+    if (res.ok && res.feedback) {
+      this.saveCache(today, res.feedback);
+      this.render(res.feedback);
+    } else {
+      el.innerHTML = '';
+    }
+  },
+
+  render(text) {
+    const el = document.getElementById('home-ai-feedback');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="ai-feedback-card">
+        <div class="ai-feedback-header">🌿 Nolia AI より</div>
+        <div class="ai-feedback-text">${text}</div>
+      </div>`;
+  },
+};
+
 // ─── ホーム ───────────────────────────────
 const Home = {
   async init() {
@@ -156,7 +293,12 @@ const Home = {
       State.todayLog = todayLog || null;
       this.renderStreak(Utils.calcStreak(todayRes.logs));
       this.renderTodayStatus(todayLog);
+      // AIフィードバック（今日の記録がある場合のみ）
+      AiFeedback.load(todayLog);
     }
+
+    // 占い（非同期・ローカルキャッシュ優先）
+    Fortune.load();
 
     // 最新レポートプレビュー
     const reportRes = await Api.call('getReports', {}, 'GET');
@@ -307,6 +449,8 @@ const Log = {
 
     if (res.ok) {
       State.todayLog = { date: Utils.today(), weight, mood, cond, taken: this.takenStatus, memo };
+      // 今日の記録が変わったのでフィードバックキャッシュをリセット
+      try { localStorage.removeItem(AiFeedback._key(Utils.today())); } catch (_) {}
       Utils.toast('記録しました！', 'success');
       await Home.init();
     } else {
