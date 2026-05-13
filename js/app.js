@@ -20,7 +20,7 @@ const Api = {
       const url = `${CONFIG.API_BASE}?action=${action}`;
       const options = {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: method === 'GET' ? undefined : JSON.stringify({
           ...payload,
           token: State.token,

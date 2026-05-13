@@ -633,7 +633,7 @@ const A = {
       + (method === 'GET' ? '&token=' + encodeURIComponent(this.token) : '');
     const opts = { method };
     if (method === 'POST') {
-      opts.headers = { 'Content-Type': 'application/json' };
+      opts.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
       opts.body    = JSON.stringify(Object.assign({ token: this.token }, payload || {}));
     }
     const r = await fetch(url, opts);
