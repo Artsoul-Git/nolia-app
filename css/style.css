@@ -461,6 +461,150 @@ input[type="range"]::-webkit-slider-thumb {
   line-height: 1.7;
 }
 
+/* ── マイページ プロフィールカード ── */
+.mypage-profile-card {
+  background: linear-gradient(135deg, var(--nolia-primary), var(--nolia-primary-light));
+  color: white;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.mypage-avatar { font-size: 52px; line-height: 1; flex-shrink: 0; }
+.mypage-profile-info { flex: 1; min-width: 0; }
+.mypage-name  { font-size: 18px; font-weight: 800; margin-bottom: 2px; }
+.mypage-email { font-size: 11px; opacity: 0.75; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mypage-since { font-size: 12px; opacity: 0.8; }
+.mypage-edit-btn {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(255,255,255,0.2);
+  border: none; border-radius: 10px;
+  padding: 6px 12px;
+  color: white; cursor: pointer; font-size: 12px; font-weight: 700; font-family: inherit;
+  white-space: nowrap;
+}
+
+/* ── 達成バッジリボン ── */
+.achievement-ribbon {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+  scrollbar-width: none;
+}
+.achievement-ribbon::-webkit-scrollbar { display: none; }
+.badge-item {
+  flex-shrink: 0;
+  background: var(--nolia-white);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 12px 10px;
+  text-align: center;
+  min-width: 72px;
+  transition: transform 0.15s;
+}
+.badge-item.earned {
+  background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+  border: 1.5px solid var(--nolia-accent);
+  box-shadow: 0 2px 10px rgba(246,173,85,0.25);
+}
+.badge-item.locked { opacity: 0.35; filter: grayscale(1); }
+.badge-icon { font-size: 26px; margin-bottom: 4px; }
+.badge-days { font-size: 13px; font-weight: 900; color: var(--nolia-primary); margin-bottom: 2px; }
+.badge-label { font-size: 9px; font-weight: 700; color: var(--nolia-muted); }
+
+/* ── サプリ継続バー ── */
+.supplement-progress-card {
+  background: var(--nolia-white);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.supplement-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+.supplement-days-num { font-size: 36px; font-weight: 900; color: var(--nolia-primary); line-height: 1; }
+.supplement-days-unit { font-size: 14px; color: var(--nolia-muted); margin-left: 4px; }
+.supplement-target { font-size: 11px; color: var(--nolia-muted); }
+.supplement-bar-track {
+  height: 10px; background: var(--nolia-border); border-radius: 5px; overflow: hidden; margin-bottom: 6px;
+}
+.supplement-bar-fill {
+  height: 100%; border-radius: 5px;
+  background: linear-gradient(90deg, var(--nolia-primary), var(--nolia-primary-light));
+  transition: width 0.8s ease;
+}
+.reorder-row { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--nolia-border); }
+.reorder-btn {
+  flex: 1; border: none; border-radius: 10px; padding: 11px 8px;
+  font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; color: white;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.reorder-btn-rakuten { background: linear-gradient(135deg, #BF0000, #E53E3E); }
+.reorder-btn-amazon  { background: linear-gradient(135deg, #C05A00, #DD6B20); }
+
+/* ── クロスセルカード ── */
+.crosssell-card {
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+.crosssell-card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.crosssell-gene { background: linear-gradient(135deg, #EBF4FF, #E0F2FE); border: 1px solid #90CDF4; }
+.crosssell-gym  { background: linear-gradient(135deg, #F0FFF4, #DCFCE7); border: 1px solid #6EE7B7; }
+.crosssell-icon { font-size: 38px; flex-shrink: 0; }
+.crosssell-body { flex: 1; }
+.crosssell-tag {
+  font-size: 10px; font-weight: 700; color: var(--nolia-primary);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;
+}
+.crosssell-title { font-size: 13px; font-weight: 700; color: var(--nolia-text); margin-bottom: 4px; }
+.crosssell-desc  { font-size: 11px; color: var(--nolia-muted); line-height: 1.6; }
+
+/* ── モーダル ── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 500;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-card {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 0;
+  width: 100%; max-width: 480px;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px; font-weight: 800; color: var(--nolia-dark);
+  margin-bottom: 20px;
+}
+.modal-close-btn {
+  background: var(--nolia-border); border: none; border-radius: 50%;
+  width: 28px; height: 28px;
+  font-size: 14px; cursor: pointer; color: var(--nolia-text);
+  display: flex; align-items: center; justify-content: center;
+}
+
 /* ── 占いカード ── */
 .fortune-card {
   background: linear-gradient(135deg, #4C1D95, #6D28D9, #7C3AED);

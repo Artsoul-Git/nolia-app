@@ -35,10 +35,19 @@
   <h2>リンクが見つかりません</h2>
   <p>
     このリンクは無効か、有効期限が切れています。<br><br>
-    週次レポートメールに届いたリンクから<br>
-    もう一度アクセスしてください。<br><br>
-    ご不明な点はスタッフまでご連絡ください。
+    下のフォームからメールアドレスを入力すると<br>
+    新しいログインリンクをお送りします。
   </p>
+  <div id="relogin-form" style="width:100%; max-width:280px; margin-top:20px;">
+    <input type="email" id="relogin-email" class="form-control"
+      placeholder="登録のメールアドレス"
+      style="margin-bottom:10px; text-align:center;">
+    <button id="relogin-btn" class="btn-nolia" onclick="Auth.requestLoginLink()">
+      ログインリンクを再送する
+    </button>
+    <div id="relogin-message" style="display:none; margin-top:12px; font-size:12px; color:var(--nolia-primary); text-align:center; line-height:1.7;">
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -257,12 +266,24 @@
 <div id="view-mypage" class="view">
   <div class="page-container">
 
-    <!-- プロフィール -->
-    <div class="nolia-card" style="text-align:center; background: linear-gradient(135deg, var(--nolia-primary), var(--nolia-primary-light)); color:white;">
-      <div style="font-size:48px; margin-bottom:8px;">🌿</div>
-      <div id="mypage-name" style="font-size:20px; font-weight:800;"></div>
-      <div id="mypage-since" style="font-size:12px; opacity:0.85; margin-top:4px;"></div>
+    <!-- プロフィールカード -->
+    <div class="mypage-profile-card">
+      <div class="mypage-avatar" id="mypage-avatar">🌿</div>
+      <div class="mypage-profile-info">
+        <div id="mypage-name" class="mypage-name"></div>
+        <div id="mypage-email" class="mypage-email"></div>
+        <div id="mypage-since" class="mypage-since"></div>
+      </div>
+      <button class="mypage-edit-btn" onclick="MyPage.openEdit()">✏️ 編集</button>
     </div>
+
+    <!-- 達成バッジ（横スクロール） -->
+    <div class="section-header">実績バッジ</div>
+    <div id="mypage-achievements" class="achievement-ribbon"></div>
+
+    <!-- サプリ継続ステータス -->
+    <div class="section-header">サプリ継続状況</div>
+    <div id="mypage-supplement-status"></div>
 
     <!-- 統計 -->
     <div class="section-header">これまでの記録</div>
@@ -270,9 +291,12 @@
 
     <!-- 体重グラフ -->
     <div class="section-header">体重の推移（直近30日）</div>
-    <div class="nolia-card">
+    <div class="nolia-card" id="weight-chart-card">
       <canvas id="weight-chart" height="160"></canvas>
     </div>
+
+    <!-- クロスセルカード -->
+    <div id="mypage-crosssell"></div>
 
     <!-- ログアウト -->
     <div style="margin-top:20px; text-align:center;">
@@ -282,6 +306,48 @@
     </div>
     <div style="height:20px;"></div>
 
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     モーダル：プロフィール編集
+═══════════════════════════════════════ -->
+<div id="modal-profile" class="modal-overlay" onclick="MyPage.closeEdit(event)">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span>プロフィール編集</span>
+      <button onclick="MyPage.closeEdit()" class="modal-close-btn">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ニックネーム</label>
+      <input type="text" id="edit-display-name" class="form-control" maxlength="20">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">身長（cm） <span style="color:var(--nolia-muted); font-weight:400;">— BMI計算に使用</span></label>
+      <input type="number" id="edit-height" class="form-control"
+        placeholder="例：162" min="100" max="250">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">活動レベル</label>
+      <select id="edit-activity" class="form-control">
+        <option value="0">ほぼ座り仕事（デスクワーク）</option>
+        <option value="1">週1〜2回 軽い運動あり</option>
+        <option value="2">週3〜4回 定期的に運動</option>
+        <option value="3">週5回以上 アクティブ</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">目標体重（kg）</label>
+      <input type="number" id="edit-goal-weight" class="form-control"
+        step="0.1" min="20" max="300" placeholder="例：52.0">
+    </div>
+
+    <button class="btn-nolia" onclick="MyPage.saveEdit()">保存する</button>
+    <div style="height:10px;"></div>
   </div>
 </div>
 

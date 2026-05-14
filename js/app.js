@@ -17,21 +17,31 @@ const State = {
 const Api = {
   async call(action, payload = {}, method = 'POST') {
     try {
-      const url = `${CONFIG.API_BASE}?action=${action}`;
-      const options = {
-        method,
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: method === 'GET' ? undefined : JSON.stringify({
-          ...payload,
-          token: State.token,
-        }),
-      };
       if (method === 'GET') {
         const params = new URLSearchParams({ action, token: State.token, ...payload });
         const res = await fetch(`${CONFIG.API_BASE}?${params}`);
         return await res.json();
       }
-      const res = await fetch(url, options);
+      const res = await fetch(`${CONFIG.API_BASE}?action=${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ ...payload, token: State.token }),
+      });
+      return await res.json();
+    } catch (err) {
+      console.error('API Error:', err);
+      return { ok: false, error: err.message };
+    }
+  },
+
+  // トークン不要のPOST（requestLoginLink など）
+  async callUnauth(action, payload = {}) {
+    try {
+      const res = await fetch(`${CONFIG.API_BASE}?action=${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+      });
       return await res.json();
     } catch (err) {
       console.error('API Error:', err);
@@ -135,6 +145,22 @@ const Auth = {
     State.token = null;
     View.show('view-login-error');
     document.getElementById('bottom-nav').style.display = 'none';
+  },
+
+  // ログインリンク再発行（パスワード忘れ代替）
+  async requestLoginLink() {
+    const email = (document.getElementById('relogin-email').value || '').trim();
+    if (!email) { Utils.toast('メールアドレスを入力してください', 'error'); return; }
+
+    const btn = document.getElementById('relogin-btn');
+    btn.textContent = '送信中…'; btn.disabled = true;
+
+    await Api.callUnauth('requestLoginLink', { email });
+
+    btn.textContent = '送信しました ✓';
+    const msg = document.getElementById('relogin-message');
+    msg.textContent = 'ご登録のメールアドレスに新しいログインリンクをお送りしました。届かない場合はスタッフにご連絡ください。';
+    msg.style.display = 'block';
   },
 };
 
@@ -553,27 +579,114 @@ const Content = {
 
 // ─── マイページ ───────────────────────────
 const MyPage = {
+  _chart: null,
+
   async init() {
     View.show('view-mypage');
+    const user = State.user;
 
-    // ユーザー情報表示
-    document.getElementById('mypage-name').textContent = State.user.display_name || State.user.name;
-    document.getElementById('mypage-since').textContent =
-      State.user.start_date ? `サプリ開始: ${Utils.formatDate(State.user.start_date)}` : '';
+    this._renderProfile(user);
 
-    // 記録データ取得
     const res = await Api.call('getDailyLogs', { days: 90 }, 'GET');
-    if (res.ok && res.logs.length > 0) {
-      this.renderChart(res.logs);
-      this.renderStats(res.logs);
+    const logs = res.ok ? res.logs : [];
+
+    this._renderAchievements(logs, user);
+    this._renderSupplementStatus(user, logs);
+    if (logs.length > 0) {
+      this._renderStats(logs);
+      this._renderChart(logs);
     }
+    this._renderCrossSell(user);
   },
 
-  renderStats(logs) {
-    const taken = logs.filter(l => l.taken).length;
+  _renderProfile(user) {
+    const fortune = Fortune.getCached(Utils.today());
+    document.getElementById('mypage-avatar').textContent = fortune ? fortune.emoji : '🌿';
+    document.getElementById('mypage-name').textContent  = user.display_name || user.name;
+    document.getElementById('mypage-email').textContent = user.email || '';
+
+    const memberDays = user.joined_at
+      ? Math.floor((new Date() - new Date(user.joined_at)) / 86400000)
+      : 0;
+    document.getElementById('mypage-since').textContent = `Nolia会員 ${memberDays}日目`;
+  },
+
+  _renderAchievements(logs, user) {
     const streak = Utils.calcStreak(logs);
-    const el = document.getElementById('mypage-stats');
+    const total  = logs.length;
+    const takenRate = total > 0 ? Math.round(logs.filter(l => l.taken).length / total * 100) : 0;
+    const suppDays  = user.start_date
+      ? Math.floor((new Date() - new Date(user.start_date)) / 86400000) : 0;
+
+    const badges = [
+      { icon: '🔥', days: '7日', label: '連続記録',  earned: streak >= 7 },
+      { icon: '🌟', days: '30日', label: '連続記録', earned: streak >= 30 },
+      { icon: '💎', days: '60日', label: '連続記録', earned: streak >= 60 },
+      { icon: '👑', days: '90日', label: '連続記録', earned: streak >= 90 },
+      { icon: '📝', days: '50回', label: '記録達成',  earned: total >= 50 },
+      { icon: '📖', days: '100回', label: '記録達成', earned: total >= 100 },
+      { icon: '💊', days: '80%+', label: '服用率',   earned: takenRate >= 80 && total >= 7 },
+      { icon: '🏆', days: '180日', label: '継続',    earned: suppDays >= 180 },
+    ];
+
+    document.getElementById('mypage-achievements').innerHTML = badges.map(b => `
+      <div class="badge-item ${b.earned ? 'earned' : 'locked'}">
+        <div class="badge-icon">${b.icon}</div>
+        <div class="badge-days">${b.days}</div>
+        <div class="badge-label">${b.label}</div>
+      </div>`).join('');
+  },
+
+  _renderSupplementStatus(user, logs) {
+    const el = document.getElementById('mypage-supplement-status');
+    if (!el) return;
+    if (!user.start_date) { el.innerHTML = ''; return; }
+
+    const days   = Math.floor((new Date() - new Date(user.start_date)) / 86400000);
+    const target = 90;
+    const pct    = Math.min(Math.round(days / target * 100), 100);
+
+    let bmiHtml = '';
+    const latestWeight = logs.filter(l => l.weight).sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (latestWeight && user.height) {
+      const h = parseFloat(user.height) / 100;
+      const bmi = (latestWeight.weight / (h * h)).toFixed(1);
+      bmiHtml = `<span style="font-size:12px; color:var(--nolia-muted); margin-left:10px;">BMI ${bmi}</span>`;
+    }
+
+    const reorderHtml = days >= 25 ? `
+      <div style="margin-top:4px; font-size:11px; color:var(--nolia-accent); font-weight:700;">
+        🛒 そろそろ補充の時期です
+      </div>
+      <div class="reorder-row">
+        <button class="reorder-btn reorder-btn-rakuten"
+          onclick="window.open(CONFIG.RAKUTEN_URL,'_blank')">🛒 楽天で購入</button>
+        <button class="reorder-btn reorder-btn-amazon"
+          onclick="window.open(CONFIG.AMAZON_URL,'_blank')">📦 Amazonで購入</button>
+      </div>` : '';
+
     el.innerHTML = `
+      <div class="supplement-progress-card">
+        <div class="supplement-top">
+          <div>
+            <span class="supplement-days-num">${days}</span>
+            <span class="supplement-days-unit">日継続中</span>
+            ${bmiHtml}
+          </div>
+          <span class="supplement-target">目標：${target}日</span>
+        </div>
+        <div class="supplement-bar-track">
+          <div class="supplement-bar-fill" style="width:${pct}%;"></div>
+        </div>
+        <div style="text-align:right; font-size:11px; color:var(--nolia-muted);">${pct}%</div>
+        ${reorderHtml}
+      </div>`;
+  },
+
+  _renderStats(logs) {
+    const taken  = logs.filter(l => l.taken).length;
+    const streak = Utils.calcStreak(logs);
+    document.getElementById('mypage-stats').innerHTML = `
       <div class="report-stats">
         <div class="report-stat">
           <div class="report-stat-val">${logs.length}</div>
@@ -584,29 +697,35 @@ const MyPage = {
           <div class="report-stat-label">連続記録</div>
         </div>
         <div class="report-stat">
-          <div class="report-stat-val">${Math.round(taken/logs.length*100)}%</div>
+          <div class="report-stat-val">${Math.round(taken / logs.length * 100)}%</div>
           <div class="report-stat-label">服用率</div>
         </div>
       </div>`;
   },
 
-  renderChart(logs) {
+  _renderChart(logs) {
     const canvas = document.getElementById('weight-chart');
     if (!canvas || !window.Chart) return;
-    const last30 = logs.slice(-30).filter(l => l.weight);
-    if (last30.length < 2) return;
 
-    new Chart(canvas, {
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+
+    const last30 = logs.slice(-30).filter(l => l.weight);
+    if (last30.length < 2) {
+      document.getElementById('weight-chart-card').innerHTML =
+        '<p style="text-align:center; color:var(--nolia-muted); padding:20px; font-size:13px;">体重データが2件以上あるとグラフが表示されます</p>';
+      return;
+    }
+
+    this._chart = new Chart(canvas, {
       type: 'line',
       data: {
-        labels: last30.map(l => l.date.slice(5)),  // MM-DD
+        labels: last30.map(l => l.date.slice(5)),
         datasets: [{
           data: last30.map(l => l.weight),
           borderColor: '#2B8A7A',
           backgroundColor: 'rgba(43,138,122,0.1)',
-          tension: 0.3,
-          pointRadius: 4,
-          fill: true,
+          tension: 0.3, pointRadius: 4, fill: true,
         }],
       },
       options: {
@@ -618,6 +737,76 @@ const MyPage = {
         },
       },
     });
+  },
+
+  _renderCrossSell(user) {
+    const el = document.getElementById('mypage-crosssell');
+    if (!el) return;
+
+    const days = user.start_date
+      ? Math.floor((new Date() - new Date(user.start_date)) / 86400000) : 0;
+
+    let html = '<div class="section-header">あなたへのご案内</div>';
+
+    if (days >= 30) {
+      html += `
+        <div class="crosssell-card crosssell-gene" onclick="window.open(CONFIG.GENE_TEST_URL,'_blank')">
+          <div class="crosssell-icon">🧬</div>
+          <div class="crosssell-body">
+            <div class="crosssell-tag">遺伝子検査 / オンライン受付</div>
+            <div class="crosssell-title">${days}日間継続中のあなたへ</div>
+            <div class="crosssell-desc">自分の体質を遺伝子レベルで知ると、サプリとの相性がさらに明確になります。通販対応・オンライン完結。</div>
+          </div>
+        </div>`;
+    }
+
+    html += `
+      <div class="crosssell-card crosssell-gym" onclick="window.open(CONFIG.GYM_URL,'_blank')">
+        <div class="crosssell-icon">💪</div>
+        <div class="crosssell-body">
+          <div class="crosssell-tag">パーソナルジム / 無料相談</div>
+          <div class="crosssell-title">専門家があなたの目標をサポート</div>
+          <div class="crosssell-desc">カラダのプロが、あなたのリズムとデータに合ったトレーニングプランを提案します。まずは無料相談から。</div>
+        </div>
+      </div>`;
+
+    el.innerHTML = html;
+  },
+
+  openEdit() {
+    const u = State.user;
+    document.getElementById('edit-display-name').value  = u.display_name || '';
+    document.getElementById('edit-height').value        = u.height || '';
+    document.getElementById('edit-activity').value      = u.exercise_days !== undefined ? String(u.exercise_days) : '0';
+    document.getElementById('edit-goal-weight').value   = u.goal_weight || '';
+    document.getElementById('modal-profile').classList.add('open');
+  },
+
+  closeEdit(e) {
+    if (!e || e.target === document.getElementById('modal-profile')) {
+      document.getElementById('modal-profile').classList.remove('open');
+    }
+  },
+
+  async saveEdit() {
+    const body = {
+      display_name:  document.getElementById('edit-display-name').value.trim(),
+      height:        parseFloat(document.getElementById('edit-height').value) || '',
+      exercise_days: parseInt(document.getElementById('edit-activity').value),
+      goal_weight:   parseFloat(document.getElementById('edit-goal-weight').value) || '',
+    };
+    if (!body.display_name) { Utils.toast('ニックネームを入力してください', 'error'); return; }
+
+    const res = await Api.call('updateProfile', body);
+    if (res.ok) {
+      State.user = { ...State.user, ...body, ...res.user };
+      document.getElementById('header-username').textContent = State.user.display_name || State.user.name;
+      this.closeEdit();
+      Utils.toast('プロフィールを更新しました ✓', 'success');
+      await this.init();
+    } else {
+      Utils.toast('更新に失敗しました', 'error');
+    }
   },
 };
 

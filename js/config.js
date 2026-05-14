@@ -18,4 +18,10 @@ const CONFIG = {
   // セッションキー（localStorage）
   SESSION_KEY: 'nolia_session',
   TOKEN_KEY: 'nolia_token',
+
+  // ━━ 商品・外部リンク（URLを差し替えるだけでOK）━━
+  RAKUTEN_URL:   '#',  // 楽天商品ページURL
+  AMAZON_URL:    '#',  // Amazon商品ページURL
+  GENE_TEST_URL: '#',  // 遺伝子検査申込URL
+  GYM_URL:       '#',  // パーソナルジム案内URL
 };
