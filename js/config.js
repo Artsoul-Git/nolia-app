@@ -20,8 +20,8 @@ const CONFIG = {
   TOKEN_KEY: 'nolia_token',
 
   // ━━ 商品・外部リンク（URLを差し替えるだけでOK）━━
-  RAKUTEN_URL:   '#',  // 楽天商品ページURL
-  AMAZON_URL:    '#',  // Amazon商品ページURL
+  RAKUTEN_URL:   'https://item.rakuten.co.jp/i-literacy/akebi01/?iasid=07rpp_10095___3g-mp4z5qqg-4t-23da0e12-5462-47a5-bf83-7ba3baba16b9',  // 楽天商品ページURL
+  AMAZON_URL:    'https://www.amazon.co.jp/dp/B0D95SQ2GC/',  // Amazon商品ページURL
   GENE_TEST_URL: '#',  // 遺伝子検査申込URL
-  GYM_URL:       '#',  // パーソナルジム案内URL
+  GYM_URL:       'https://i-literacy.co.jp/',  // パーソナルジム案内URL
 };

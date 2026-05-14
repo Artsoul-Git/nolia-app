@@ -343,6 +343,23 @@ input[type="range"]::-webkit-slider-thumb {
 }
 .content-card-excerpt { font-size: 11px; color: var(--nolia-muted); line-height: 1.5; }
 
+/* ── ワンポイントTipカード ── */
+.tip-card { display: flex; align-items: flex-start; gap: 14px; }
+.tip-icon { font-size: 30px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+.tip-text { font-size: 13px; line-height: 1.75; color: var(--nolia-text); }
+
+/* ── 活用ガイドリスト ── */
+.guide-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.guide-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--nolia-white); border-radius: 12px; padding: 14px;
+  border: 1px solid var(--nolia-border);
+}
+.guide-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+.guide-body { flex: 1; }
+.guide-title { font-size: 13px; font-weight: 700; color: var(--nolia-dark); margin-bottom: 4px; }
+.guide-desc { font-size: 12px; line-height: 1.65; color: var(--nolia-muted); }
+
 /* ── セクションヘッダー ── */
 .section-header {
   font-size: 12px;
@@ -547,6 +564,7 @@ input[type="range"]::-webkit-slider-thumb {
   flex: 1; border: none; border-radius: 10px; padding: 11px 8px;
   font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; color: white;
   display: flex; align-items: center; justify-content: center; gap: 6px;
+  text-decoration: none;
 }
 .reorder-btn-rakuten { background: linear-gradient(135deg, #BF0000, #E53E3E); }
 .reorder-btn-amazon  { background: linear-gradient(135deg, #C05A00, #DD6B20); }

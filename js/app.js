@@ -559,32 +559,162 @@ const Report = {
   },
 };
 
-// ─── コンテンツ ───────────────────────────
+// ─── コンテンツ（ヘルスガイド）─────────────
 const Content = {
   async init() {
     View.show('view-content');
     const el = document.getElementById('content-list');
     el.innerHTML = '<div style="text-align:center;padding:20px;"><div class="spinner" style="margin:auto;"></div></div>';
 
-    const res = await Api.call('getContent', {}, 'GET');
-    if (!res.ok || res.content.length === 0) {
-      el.innerHTML = `<div class="nolia-card" style="text-align:center;padding:30px;">
-        <p style="color:var(--nolia-muted);">コンテンツを準備中です</p></div>`;
-      return;
+    // ログと外部コンテンツを並行取得
+    const [logsRes, contentRes] = await Promise.all([
+      Api.call('getDailyLogs', { days: 30 }, 'GET'),
+      Api.call('getContent', {}, 'GET'),
+    ]);
+    const logs = logsRes.ok ? logsRes.logs : [];
+
+    let html = '';
+    html += this._buildDailyTip(logs);
+    html += this._buildFeatureGuide(logs);
+
+    // 編集コンテンツ（ContentManager経由）
+    if (contentRes.ok && contentRes.content && contentRes.content.length > 0) {
+      const icons = { tip: '💡', blog: '📖', promo: '🎁', testimonial: '⭐' };
+      const catLabels = { tip: '健康Tips', blog: 'ジムノウハウ', promo: '特別なご提案', testimonial: '体験談' };
+      html += '<div class="section-header" style="margin-top:8px;">ヘルスコンテンツ</div>';
+      html += contentRes.content.map(c => `
+        <div class="content-card" onclick="Content.open('${c.external_url}')">
+          <div class="content-card-icon">${icons[c.type] || '📌'}</div>
+          <div class="content-card-body">
+            <div class="content-card-cat">${catLabels[c.type] || c.category}</div>
+            <div class="content-card-title">${c.title}</div>
+            <div class="content-card-excerpt">${c.excerpt}</div>
+          </div>
+        </div>`).join('');
     }
 
-    const icons = { tip: '💡', blog: '📖', promo: '🎁', testimonial: '⭐' };
-    const catLabels = { tip: '健康Tips', blog: 'ジムノウハウ', promo: '特別なご提案', testimonial: '体験談' };
+    el.innerHTML = html;
+  },
 
-    el.innerHTML = res.content.map(c => `
-      <div class="content-card" onclick="Content.open('${c.external_url}')">
-        <div class="content-card-icon">${icons[c.type] || '📌'}</div>
-        <div class="content-card-body">
-          <div class="content-card-cat">${catLabels[c.type] || c.category}</div>
-          <div class="content-card-title">${c.title}</div>
-          <div class="content-card-excerpt">${c.excerpt}</div>
-        </div>
-      </div>`).join('');
+  _buildDailyTip(logs) {
+    const todayStr = Utils.today();
+    const todayLog = logs.find(l => l.date === todayStr);
+    const streak   = Utils.calcStreak(logs);
+    const taken    = logs.filter(l => l.taken).length;
+    const takenRate = logs.length >= 7 ? Math.round(taken / logs.length * 100) : null;
+
+    // 条件付き候補リスト（priority高いほど優先）
+    const candidates = [];
+
+    if (!todayLog) {
+      candidates.push({ icon: '📝', priority: 10,
+        text: '今日はまだ記録していません。体重・気分・サプリ服用の3項目だけでも記録しておくと、週次レポートの精度がぐっと上がります。' });
+    } else if (!todayLog.taken) {
+      candidates.push({ icon: '💊', priority: 9,
+        text: '今日のサプリがまだ未記録です。飲んだらアプリを開いて「飲んだ」にチェックしてみましょう。服用率がレポートに反映されます。' });
+    }
+
+    if (streak >= 14) {
+      candidates.push({ icon: '🔥', priority: 8,
+        text: `${streak}日連続で記録中！素晴らしいペースです。記録が続くほどAIレポートがあなたのカラダのリズムをより精密に分析できます。` });
+    } else if (streak >= 7) {
+      candidates.push({ icon: '⭐', priority: 7,
+        text: `${streak}日連続記録中。1週間の継続は習慣化のカギです。この調子でもう1週間続けると実績バッジが解放されます。` });
+    } else if (streak === 0 && logs.length > 0) {
+      candidates.push({ icon: '🌿', priority: 6,
+        text: '少し間が空いてしまいましたが大丈夫。今日から再開すれば連続記録がリスタートします。完璧を目指さず、「気づいたとき記録する」くらいが長続きのコツです。' });
+    }
+
+    if (takenRate !== null && takenRate < 70) {
+      candidates.push({ icon: '⏰', priority: 7,
+        text: `直近のサプリ服用率が${takenRate}%です。毎朝食後など「○○したついでに飲む」とセットにすると継続しやすくなります。` });
+    } else if (takenRate !== null && takenRate >= 90) {
+      candidates.push({ icon: '✨', priority: 5,
+        text: `直近のサプリ服用率${takenRate}%！とても高い継続率です。コツコツ続けることが最大の効果に繋がります。この調子で。` });
+    }
+
+    // 時刻ベースのデフォルト
+    const hour = new Date().getHours();
+    if (candidates.length === 0 || candidates.every(c => c.priority < 5)) {
+      if (hour < 10) {
+        candidates.push({ icon: '🌅', priority: 3,
+          text: '朝に体重を測る習慣は、データの精度を上げる一番のコツです。毎朝起きてすぐ、排尿後に計測してみましょう。' });
+      } else if (hour < 14) {
+        candidates.push({ icon: '💧', priority: 3,
+          text: '水分補給はできていますか？サプリの吸収を助けるためにも、1日1.5〜2Lの水分を意識してみましょう。' });
+      } else if (hour < 18) {
+        candidates.push({ icon: '🧘', priority: 3,
+          text: '気分や体調を数値で残しておくと、後から振り返ったときにカラダのリズムが見えてきます。今日の気分はどうですか？' });
+      } else {
+        candidates.push({ icon: '🌙', priority: 3,
+          text: '今日の記録はできましたか？夜寝る前の2分で記録を完成させる習慣が、明日の自分への小さな贈り物になります。' });
+      }
+    }
+
+    candidates.sort((a, b) => b.priority - a.priority);
+    const tip = candidates[0];
+
+    return `
+      <div class="section-header">今日のワンポイント</div>
+      <div class="nolia-card tip-card">
+        <div class="tip-icon">${tip.icon}</div>
+        <div class="tip-text">${tip.text}</div>
+      </div>`;
+  },
+
+  _buildFeatureGuide(logs) {
+    const user = State.user;
+    const days = user.start_date
+      ? Math.floor((new Date() - new Date(user.start_date)) / 86400000) : 0;
+    const streak = Utils.calcStreak(logs);
+
+    // 利用状況に応じたガイド（2〜3件）
+    const contextGuides = [];
+
+    if (logs.length === 0) {
+      contextGuides.push({ icon: '📝', title: 'まず今日の記録から始めよう',
+        desc: '「記録」タブを開いて体重・気分・体調・サプリ服用を入力しましょう。1回の記録が最初の一歩です。' });
+      contextGuides.push({ icon: '👤', title: 'プロフィールを完成させよう',
+        desc: 'マイページの「編集」から生年月日・身長・目標体重を設定すると、バイオサイクルとBMI計算が有効になります。' });
+    } else if (days < 14) {
+      contextGuides.push({ icon: '🌀', title: 'ホームのエネルギーカードとは？',
+        desc: '生年月日から計算するバイオサイクルで今日のカラダのリズムを表示します。23日・28日・33日の3つの周期が重なる日は体調変化に注意しましょう。' });
+      contextGuides.push({ icon: '📊', title: '週次レポートが届くまで待とう',
+        desc: '毎週日曜夜、1週間分の記録をAIが分析したレポートが届きます。記録が多いほど内容が充実するので毎日継続しましょう。' });
+    } else if (days < 30) {
+      contextGuides.push({ icon: '🏆', title: '実績バッジを確認しよう',
+        desc: 'マイページの「実績バッジ」は継続日数・服用率・体重変化などの節目に解放されます。バッジが増えるほどカラダへの理解が深まっています。' });
+      contextGuides.push({ icon: '📈', title: '体重グラフで全体トレンドを見よう',
+        desc: 'マイページ下部のグラフで直近30日の体重推移を確認できます。日々の小さな変動より、週単位の緩やかな傾きを見るのがポイントです。' });
+    } else {
+      contextGuides.push({ icon: '🔄', title: `${days}日継続中 — そろそろ補充を`,
+        desc: '継続が効果を作ります。在庫が少なくなる前に早めの補充がおすすめです。マイページ下部から楽天・Amazonで購入できます。' });
+      contextGuides.push({ icon: '📋', title: '過去レポートで自分の傾向を掴もう',
+        desc: '「レポート」タブで過去の週次レポートを一覧確認できます。体重変化・服用率・気分スコアのトレンドを3か月単位で振り返ってみましょう。' });
+    }
+
+    // 常時表示ガイド（重複しない範囲で2件）
+    const fixedGuides = [
+      { icon: '⚡', title: 'AIフィードバックを活用しよう',
+        desc: '記録後に表示されるAIコーチのコメントは、前回との体重差・気分・体調を総合した個別メッセージです。励みやヒントとして参考にしてください。' },
+      { icon: '🎯', title: '目標体重は小さく設定するのがコツ',
+        desc: '現在より1〜2kgダウンなど小さめに設定すると達成感が生まれ継続につながります。プロフィール編集から目標体重を変更できます。' },
+    ];
+
+    const allGuides = [...contextGuides, ...fixedGuides];
+
+    return `
+      <div class="section-header" style="margin-top:8px;">アプリ活用ガイド</div>
+      <div class="guide-list">
+        ${allGuides.map(g => `
+          <div class="guide-item">
+            <div class="guide-icon">${g.icon}</div>
+            <div class="guide-body">
+              <div class="guide-title">${g.title}</div>
+              <div class="guide-desc">${g.desc}</div>
+            </div>
+          </div>`).join('')}
+      </div>`;
   },
 
   open(url) {
@@ -612,6 +742,7 @@ const MyPage = {
       this._renderChart(logs);
     }
     this._renderCrossSell(user);
+    this._renderPurchaseLinks();
   },
 
   _renderProfile(user) {
@@ -674,10 +805,8 @@ const MyPage = {
         🛒 そろそろ補充の時期です
       </div>
       <div class="reorder-row">
-        <button class="reorder-btn reorder-btn-rakuten"
-          onclick="window.open(CONFIG.RAKUTEN_URL,'_blank')">🛒 楽天で購入</button>
-        <button class="reorder-btn reorder-btn-amazon"
-          onclick="window.open(CONFIG.AMAZON_URL,'_blank')">📦 Amazonで購入</button>
+        <a href="${CONFIG.RAKUTEN_URL}" target="_blank" rel="noopener noreferrer" class="reorder-btn reorder-btn-rakuten">🛒 楽天で購入</a>
+        <a href="${CONFIG.AMAZON_URL}" target="_blank" rel="noopener noreferrer" class="reorder-btn reorder-btn-amazon">📦 Amazonで購入</a>
       </div>` : '';
 
     el.innerHTML = `
@@ -765,25 +894,25 @@ const MyPage = {
 
     if (days >= 30) {
       html += `
-        <div class="crosssell-card crosssell-gene" onclick="window.open(CONFIG.GENE_TEST_URL,'_blank')">
+        <a href="${CONFIG.GENE_TEST_URL}" target="_blank" rel="noopener noreferrer" class="crosssell-card crosssell-gene" style="text-decoration:none; color:inherit;">
           <div class="crosssell-icon">🧬</div>
           <div class="crosssell-body">
             <div class="crosssell-tag">遺伝子検査 / オンライン受付</div>
             <div class="crosssell-title">${days}日間継続中のあなたへ</div>
             <div class="crosssell-desc">自分の体質を遺伝子レベルで知ると、サプリとの相性がさらに明確になります。通販対応・オンライン完結。</div>
           </div>
-        </div>`;
+        </a>`;
     }
 
     html += `
-      <div class="crosssell-card crosssell-gym" onclick="window.open(CONFIG.GYM_URL,'_blank')">
+      <a href="${CONFIG.GYM_URL}" target="_blank" rel="noopener noreferrer" class="crosssell-card crosssell-gym" style="text-decoration:none; color:inherit;">
         <div class="crosssell-icon">💪</div>
         <div class="crosssell-body">
           <div class="crosssell-tag">パーソナルジム / 無料相談</div>
           <div class="crosssell-title">専門家があなたの目標をサポート</div>
           <div class="crosssell-desc">カラダのプロが、あなたのリズムとデータに合ったトレーニングプランを提案します。まずは無料相談から。</div>
         </div>
-      </div>`;
+      </a>`;
 
     el.innerHTML = html;
   },
@@ -826,6 +955,33 @@ const MyPage = {
       Utils.toast(`更新失敗: ${res.error || '不明なエラー'}`, 'error');
       console.error('updateProfile error:', res);
     }
+  },
+
+  async sendLoginLink() {
+    const email = State.user?.email;
+    if (!email) { Utils.toast('メールアドレスが登録されていません', 'error'); return; }
+    const btn = document.getElementById('modal-relogin-btn');
+    if (btn) { btn.textContent = '送信中…'; btn.disabled = true; }
+    await Api.callUnauth('requestLoginLink', { email });
+    if (btn) btn.textContent = '送信しました ✓';
+    const msg = document.getElementById('modal-relogin-msg');
+    if (msg) {
+      msg.textContent = `${email} に新しいログインリンクをお送りしました。`;
+      msg.style.display = 'block';
+    }
+  },
+
+  _renderPurchaseLinks() {
+    const el = document.getElementById('mypage-purchase-links');
+    if (!el) return;
+    el.innerHTML = `
+      <div style="font-size:12px; color:var(--nolia-muted); text-align:center; margin-bottom:10px;">
+        在庫が少なくなったら早めに補充を
+      </div>
+      <div class="reorder-row" style="margin-top:0; padding-top:0; border-top:none;">
+        <a href="${CONFIG.RAKUTEN_URL}" target="_blank" rel="noopener noreferrer" class="reorder-btn reorder-btn-rakuten">🛒 楽天で購入</a>
+        <a href="${CONFIG.AMAZON_URL}" target="_blank" rel="noopener noreferrer" class="reorder-btn reorder-btn-amazon">📦 Amazonで購入</a>
+      </div>`;
   },
 };
 
