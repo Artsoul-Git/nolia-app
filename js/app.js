@@ -198,32 +198,47 @@ const Fortune = {
     const el = document.getElementById('home-fortune');
     if (!el) return;
     el.innerHTML = `
-      <div class="fortune-card" style="text-align:center; padding:24px;">
+      <div class="fortune-card" style="background:linear-gradient(135deg,#2B8A7ACC,#38B2AC99); text-align:center; padding:28px;">
         <div class="spinner" style="margin:0 auto 10px; border-color:rgba(255,255,255,0.3); border-top-color:white;"></div>
-        <div style="font-size:12px; opacity:0.8;">占い取得中…</div>
+        <div style="font-size:12px; opacity:0.8;">エネルギーを読み取り中…</div>
       </div>`;
   },
 
   render(f) {
     const el = document.getElementById('home-fortune');
     if (!el) return;
+
+    // 旧フォーマット（動物占い）が残っていたらキャッシュ破棄して再取得
+    if (!f.energy_name && f.animal) {
+      localStorage.removeItem(this._key(Utils.today()));
+      this.load();
+      return;
+    }
+
+    const hex = (f.color_hex && /^#[0-9A-Fa-f]{6}$/.test(f.color_hex))
+      ? f.color_hex : '#2B8A7A';
+
     el.innerHTML = `
-      <div class="fortune-card">
-        <div class="fortune-animal">
-          <span class="fortune-emoji">${f.emoji}</span>
+      <div class="fortune-card" style="background:linear-gradient(140deg,${hex}F0,${hex}99); box-shadow:0 4px 24px ${hex}55;">
+        <div class="fortune-top">
+          <div class="fortune-orb">
+            <div class="fortune-orb-keyword">${f.keyword}</div>
+          </div>
           <div>
-            <div class="fortune-animal-name">${f.animal}</div>
-            <div class="fortune-tagline">「${f.tagline}」</div>
+            <div class="fortune-energy-name">${f.energy_name}</div>
+            <div class="fortune-color-label">🎨 ${f.color_name}</div>
           </div>
         </div>
         <div class="fortune-message">${f.message}</div>
         <div class="fortune-lucky">
           <div class="fortune-lucky-item">
-            <span class="fortune-lucky-label">ラッキーカラー</span>
-            <span class="fortune-lucky-val">🎨 ${f.lucky_color}</span>
+            <span class="fortune-lucky-label">今日のカラー</span>
+            <span class="fortune-lucky-val">
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:white;opacity:0.9;margin-right:3px;"></span>${f.color_name}
+            </span>
           </div>
           <div class="fortune-lucky-item">
-            <span class="fortune-lucky-label">今日のアクション</span>
+            <span class="fortune-lucky-label">今日意識すること</span>
             <span class="fortune-lucky-val">✨ ${f.lucky_action}</span>
           </div>
         </div>
@@ -235,10 +250,10 @@ const Fortune = {
     if (!el) return;
     if (error === 'birthdate_not_set') {
       el.innerHTML = `
-        <div class="fortune-card" style="text-align:center;">
-          <div style="font-size:36px; margin-bottom:10px;">🔮</div>
-          <div style="font-size:13px; font-weight:700; margin-bottom:6px;">生年月日を登録すると占いが見られます</div>
-          <div style="font-size:11px; opacity:0.8;">プロフィール設定で生年月日を入力してください</div>
+        <div class="fortune-card" style="background:linear-gradient(140deg,#2B8A7ACC,#38B2AC99); text-align:center;">
+          <div style="font-size:32px; margin-bottom:10px;">🌿</div>
+          <div style="font-size:13px; font-weight:700; margin-bottom:6px;">生年月日を登録するとエネルギーが見られます</div>
+          <div style="font-size:11px; opacity:0.8;">マイページ → 編集 → 生年月日を入力してください</div>
         </div>`;
     } else {
       el.innerHTML = '';
@@ -776,6 +791,7 @@ const MyPage = {
   openEdit() {
     const u = State.user;
     document.getElementById('edit-display-name').value  = u.display_name || '';
+    document.getElementById('edit-birthdate').value     = u.birthdate || '';
     document.getElementById('edit-height').value        = u.height || '';
     document.getElementById('edit-activity').value      = u.exercise_days !== undefined ? String(u.exercise_days) : '0';
     document.getElementById('edit-goal-weight').value   = u.goal_weight || '';
@@ -791,6 +807,7 @@ const MyPage = {
   async saveEdit() {
     const body = {
       display_name:  document.getElementById('edit-display-name').value.trim(),
+      birthdate:     document.getElementById('edit-birthdate').value || '',
       height:        parseFloat(document.getElementById('edit-height').value) || '',
       exercise_days: parseInt(document.getElementById('edit-activity').value),
       goal_weight:   parseFloat(document.getElementById('edit-goal-weight').value) || '',
@@ -805,7 +822,9 @@ const MyPage = {
       Utils.toast('プロフィールを更新しました ✓', 'success');
       await this.init();
     } else {
-      Utils.toast('更新に失敗しました', 'error');
+      // エラー内容を表示して原因特定を助ける
+      Utils.toast(`更新失敗: ${res.error || '不明なエラー'}`, 'error');
+      console.error('updateProfile error:', res);
     }
   },
 };
