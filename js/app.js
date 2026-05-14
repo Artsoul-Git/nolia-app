@@ -53,7 +53,9 @@ const Api = {
 // ─── ユーティリティ ───────────────────────
 const Utils = {
   today() {
-    return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    // JST（UTC+9）基準で日付を返す → 日本時間0:00に翌日に切り替わる
+    const d = new Date(Date.now() + 9 * 3600000);
+    return d.toISOString().split('T')[0];
   },
   formatDate(dateStr) {
     const d = new Date(dateStr);
@@ -334,6 +336,7 @@ const Home = {
       State.todayLog = todayLog || null;
       this.renderStreak(Utils.calcStreak(todayRes.logs));
       this.renderTodayStatus(todayLog);
+      this._renderChart(todayRes.logs);
       // AIフィードバック（今日の記録がある場合のみ）
       AiFeedback.load(todayLog);
     }
@@ -416,6 +419,64 @@ const Home = {
         <div class="report-body" style="overflow:hidden; max-height:60px;">${report.report_text}</div>
         <div style="text-align:right; font-size:11px; color:var(--nolia-primary); margin-top:8px;">続きを読む →</div>
       </div>`;
+  },
+
+  _renderChart(logs) {
+    const el = document.getElementById('home-chart-card');
+    if (!el || !window.Chart) return;
+
+    const filtered = logs.filter(l => l.weight).slice(-30);
+    if (filtered.length < 3) { el.style.display = 'none'; return; }
+    el.style.display = '';
+
+    const canvas = document.getElementById('home-trend-chart');
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+
+    // 気分7日移動平均
+    const allLogs = logs.slice(-30);
+    const moodMA = filtered.map(log => {
+      const idx = allLogs.findIndex(l => l.date === log.date);
+      const window = allLogs.slice(Math.max(0, idx - 6), idx + 1).filter(l => l.mood);
+      return window.length > 0
+        ? +(window.reduce((s, l) => s + l.mood, 0) / window.length).toFixed(1)
+        : null;
+    });
+
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: filtered.map(l => l.date.slice(5)),
+        datasets: [
+          {
+            label: '体重(kg)',
+            data: filtered.map(l => l.weight),
+            borderColor: '#2B8A7A',
+            backgroundColor: 'rgba(43,138,122,0.08)',
+            tension: 0.3, pointRadius: 2, fill: true, yAxisID: 'y',
+          },
+          {
+            label: '気分(7日MA)',
+            data: moodMA,
+            borderColor: '#F6AD55',
+            backgroundColor: 'transparent',
+            tension: 0.4, pointRadius: 0, borderWidth: 2.5, yAxisID: 'y2',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          y:  { position: 'left',  ticks: { callback: v => v + 'kg', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+          y2: { position: 'right', min: 1, max: 5,
+            ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? ['','😞','😕','😐','😊','😄'][v] : '', font: { size: 11 } },
+            grid: { drawOnChartArea: false } },
+          x:  { ticks: { maxTicksLimit: 6, font: { size: 10 } } },
+        },
+      },
+    });
   },
 };
 
